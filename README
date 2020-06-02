@@ -1,0 +1,57 @@
+该项目的所有的代码均是开源代码tinyhttpd，https://sourceforge.net/projects/tinyhttpd/
+
+为了学习多线程以及socket网路编程，我将该带码通读了一遍，几乎每个函数都写了注释，
+一方面帮助我记忆；另一方面帮助别人理解项目代码。
+
+tinyhttpd是非常好的开源项目，很适合初学者学习。此外，如果你是很熟悉多线程和网络编程，看我写的注释应该也能够帮助你理解。
+
+希望能够为大家带上来帮助！
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+我后续会在README文档中更新该项目的思路。同时，我也打算根据工作中学到的知识对该项目进行简单的重构。
+
+
+  
+  
+  
+  This software is copyright 1999 by J. David Blackstone.  Permission
+is granted to redistribute and modify this software under the terms of
+the GNU General Public License, available at http://www.gnu.org/ .
+
+  If you use this software or examine the code, I would appreciate
+knowing and would be overjoyed to hear about it at
+jdavidb@sourceforge.net .
+
+  This software is not production quality.  It comes with no warranty
+of any kind, not even an implied warranty of fitness for a particular
+purpose.  I am not responsible for the damage that will likely result
+if you use this software on your computer system.
+
+  I wrote this webserver for an assignment in my networking class in
+1999.  We were told that at a bare minimum the server had to serve
+pages, and told that we would get extra credit for doing "extras."
+Perl had introduced me to a whole lot of UNIX functionality (I learned
+sockets and fork from Perl!), and O'Reilly's lion book on UNIX system
+calls plus O'Reilly's books on CGI and writing web clients in Perl got
+me thinking and I realized I could make my webserver support CGI with
+little trouble.
+
+  Now, if you're a member of the Apache core group, you might not be
+impressed.  But my professor was blown over.  Try the color.cgi sample
+script and type in "chartreuse."  Made me seem smarter than I am, at
+any rate. :)
+
+  Apache it's not.  But I do hope that this program is a good
+educational tool for those interested in http/socket programming, as
+well as UNIX system calls.  (There's some textbook uses of pipes,
+environment variables, forks, and so on.)
+
+  One last thing: if you look at my webserver or (are you out of
+mind?!?) use it, I would just be overjoyed to hear about it.  Please
+email me.  I probably won't really be releasing major updates, but if
+I help you learn something, I'd love to know!
+
+  Happy hacking!
+
+                                   J. David Blackstone
