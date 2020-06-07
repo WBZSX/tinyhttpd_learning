@@ -12,9 +12,10 @@
  *  4) Uncomment the line that runs accept_request().
  *  5) Remove -lsocket from the Makefile.
  */
+
 #include <stdio.h>
 #include <sys/socket.h>
- #include <sys/types.h>
+#include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -26,11 +27,19 @@
 #include <sys/wait.h>
 #include <stdlib.h>
 
+typedef struct s_thread_list_t
+{
+    struct s_thread_list_t* next;
+    pthread_t threadID;
+    int socketfd;
+}s_thread_list_t;
+
+s_thread_list_t* thread_head;
+
 #define ISspace(x) isspace((int)(x))
 
 #define SERVER_STRING "Server: jdbhttpd/0.1.0\r\n"
 
-void accept_request(int);
 void bad_request(int);
 void cat(int, FILE *);
 void cannot_execute(int);
@@ -43,12 +52,14 @@ void serve_file(int, const char *);
 int startup(u_short *);
 void unimplemented(int);
 
+static void list_pop(s_thread_list_t* threadNode);
+
 /**********************************************************************/
 /* A request has caused a call to accept() on the server port to
  * return.  Process the request appropriately.
  * Parameters: the socket connected to the client */
 /**********************************************************************/
-void accept_request(int client)
+void* accept_request(void *pMsg)
 {
     char buf[1024];
     int numchars;
@@ -60,6 +71,11 @@ void accept_request(int client)
     int cgi = 0;      /* becomes true if server decides this is a CGI
                         * program */
     char *query_string = NULL;
+
+    s_thread_list_t thread_node;
+    memcpy(&thread_node, pMsg, sizeof(s_thread_list_t));
+
+    int client = thread_node.socketfd;
 
     numchars = get_line(client, buf, sizeof(buf)); // 这个函数的作用是遇到回车换行符就终止读取字符串，并返回
     i = 0; 
@@ -164,6 +180,7 @@ void accept_request(int client)
     }
 
     close(client); //客户端请求处理完毕，线程结束，关闭socket
+    list_pop(&thread_node);
 }
 
 /**********************************************************************/
@@ -576,10 +593,11 @@ void unimplemented(int client)
 
 /**********************************************************************/
 
+#if 0
 int main(void)
 {
     int server_sock = -1; 
-    u_short port = 0;
+    u_short port = 50164;
     int client_sock = -1;
     struct sockaddr_in client_name;
     int client_name_len = sizeof(client_name);
@@ -627,4 +645,101 @@ int main(void)
     close(server_sock);
 
     return(0);
+}
+#endif
+
+static void list_init()
+{
+    thread_head->next = NULL;
+    thread_head->socketfd = -1;
+    return;
+}
+
+extern void list_push(s_thread_list_t* threadNode)
+{
+    s_thread_list_t* tmp_node;
+    tmp_node = thread_head->next;
+
+    while(NULL != tmp_node->next)
+    {
+        tmp_node = tmp_node->next;
+    }
+
+    tmp_node->next = threadNode;
+
+    threadNode->next = NULL;
+    return;
+}
+
+static void list_pop(s_thread_list_t* threadNode)
+{
+    s_thread_list_t* tmp_node;
+    tmp_node = thread_head;
+
+    while(threadNode->socketfd != tmp_node->next->socketfd)
+    {
+        tmp_node = tmp_node->next;
+    }
+
+    tmp_node->next = threadNode->next;
+    return;
+}
+
+static void create_thread(s_thread_list_t* threadNode)
+{
+    pthread_attr_t thread_attr;
+
+    //设置线程为分离属性，当线程运行结束后，资源自动回收
+    pthread_attr_init(&thread_attr);
+
+    pthread_attr_setdetachstate(&thread_attr, PTHREAD_CREATE_DETACHED);
+
+    pthread_create(&(threadNode->threadID), &thread_attr, accept_request, threadNode);
+
+    list_push(&threadNode);
+}
+
+int main()
+{
+    int server_socket = -1;
+    int client_socket = -1;
+    struct sockaddr_in server_addr;
+    struct sockaddr_in client_addr;
+    int port = 50164;
+    int sin_size;
+    
+    thread_head = malloc(sizeof(s_thread_list_t));
+    thread_head->next = NULL;
+
+    //创建socket
+    server_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+    //绑定socket
+    server_addr.sin_port = htons(port);
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    bind(server_socket, (struct sockaddr*) &server_addr, sizeof(server_addr));
+
+    //监听socket
+    listen(server_socket, 5);
+
+    while(1)
+    {
+        //每接到一次客户端请求，则创建一个线程处理
+        client_socket = accept(server_socket, (struct sockaddr*) &client_addr, &sin_size);
+        s_thread_list_t thread_node;
+        thread_node.socketfd = client_socket;
+        thread_node.next = NULL;
+
+        //为每一个连接请求，创建资源
+        create_thread(&thread_node);
+
+        if(thread_head->next == NULL)
+        {
+            break;
+        }
+    }
+
+    return 0;
 }
